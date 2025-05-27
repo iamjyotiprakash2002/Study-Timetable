@@ -263,7 +263,7 @@
 <body>
     <div class="container">
         <h1>📚 45-Day Study Timetable</h1>
-        <p class="subtitle">Physics (2.5 hrs/day) • Mathematics (3.5 hrs/day) • June 1 - July 15, 2025</p>
+        <p class="subtitle">Physics (2.5 hrs/day) • Mathematics (3.5 hrs/day) • May 28 - July 11, 2025</p>
         
         <div class="legend">
             <div class="legend-item physics-legend">
@@ -466,7 +466,7 @@
             "Vectors - Dot product & cross product applications"
         ];
 
-        // Generate dates starting from June 1, 2025
+        // Generate dates starting from May 28, 2025
         function generateDates(startDate, days) {
             const dates = [];
             const current = new Date(startDate);
@@ -491,7 +491,7 @@
 
         // Generate timetable
         function generateTimetable() {
-            const startDate = new Date('2025-06-01');
+            const startDate = new Date('2025-05-28');
             const dates = generateDates(startDate, 45);
             const tbody = document.getElementById('timetableBody');
             
