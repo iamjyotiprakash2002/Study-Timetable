@@ -263,7 +263,7 @@
 <body>
     <div class="container">
         <h1>📚 45-Day Study Timetable</h1>
-        <p class="subtitle">Physics (2.5 hrs/day) • Mathematics (3.5 hrs/day) • May 25 - July 8, 2025</p>
+        <p class="subtitle">Physics (2.5 hrs/day) • Mathematics (3.5 hrs/day) • June 1 - July 15, 2025</p>
         
         <div class="legend">
             <div class="legend-item physics-legend">
@@ -286,6 +286,19 @@
             <div class="stat-card">
                 <span class="stat-number" id="successRate">0%</span>
                 <span class="stat-label">Success Rate</span>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(45deg, #e17055, #d63031); cursor: pointer;" onclick="clearAllData()" title="Clear all progress data">
+                <span class="stat-number">🗑️</span>
+                <span class="stat-label">Reset Data</span>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+            <div id="statusIndicator" style="font-weight: 600; color: #2c3e50;">
+                🟡 Connecting...
+            </div>
+            <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">
+                Your progress syncs automatically across all your devices
             </div>
         </div>
         
@@ -310,7 +323,51 @@
         </table>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "demo-key",
+            authDomain: "study-tracker-demo.firebaseapp.com",
+            databaseURL: "https://study-tracker-demo-default-rtdb.firebaseio.com/",
+            projectId: "study-tracker-demo"
+        };
+
+        // Initialize Firebase
+        let database = null;
+        let userId = null;
+        let isOnline = navigator.onLine;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            
+            // Generate or get user ID
+            userId = localStorage.getItem('studyTrackerUserId');
+            if (!userId) {
+                userId = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+                localStorage.setItem('studyTrackerUserId', userId);
+            }
+            
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.warn('Firebase initialization failed, using local storage:', error);
+        }
+
+        // Network status monitoring
+        window.addEventListener('online', () => {
+            isOnline = true;
+            document.getElementById('statusIndicator').textContent = '🟢 Online - Syncing across devices';
+            syncLocalToCloud();
+        });
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            document.getElementById('statusIndicator').textContent = '🔴 Offline - Local storage only';
+        });
         // Study plan data
         const physicsTopics = [
             "Ch 1: Electric Charges and Fields - Basic concepts",
@@ -409,7 +466,7 @@
             "Vectors - Dot product & cross product applications"
         ];
 
-        // Generate dates starting from May 25, 2025
+        // Generate dates starting from June 1, 2025
         function generateDates(startDate, days) {
             const dates = [];
             const current = new Date(startDate);
@@ -434,7 +491,7 @@
 
         // Generate timetable
         function generateTimetable() {
-            const startDate = new Date('2025-05-25');
+            const startDate = new Date('2025-06-01');
             const dates = generateDates(startDate, 45);
             const tbody = document.getElementById('timetableBody');
             
@@ -467,6 +524,119 @@
             });
         }
 
+        // Load saved data from cloud or localStorage
+        async function loadSavedData() {
+            try {
+                if (database && isOnline) {
+                    // Try to load from Firebase
+                    const snapshot = await database.ref(`users/${userId}/progress`).once('value');
+                    const cloudData = snapshot.val();
+                    
+                    if (cloudData) {
+                        // Restore checkbox states from cloud
+                        Object.keys(cloudData).forEach(day => {
+                            const status = cloudData[day];
+                            const checkBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="check"]`);
+                            const crossBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="cross"]`);
+                            
+                            if (checkBox && crossBox) {
+                                if (status === 'completed') {
+                                    checkBox.classList.add('checked');
+                                    crossBox.classList.remove('crossed');
+                                } else if (status === 'missed') {
+                                    crossBox.classList.add('crossed');
+                                    checkBox.classList.remove('checked');
+                                }
+                            }
+                        });
+                        
+                        // Also save to localStorage as backup
+                        localStorage.setItem('studyTimetableProgressJune', JSON.stringify(cloudData));
+                        document.getElementById('statusIndicator').textContent = '🟢 Online - Syncing across devices';
+                    } else {
+                        // No cloud data, try to sync local data to cloud
+                        syncLocalToCloud();
+                    }
+                } else {
+                    throw new Error('Database not available');
+                }
+            } catch (error) {
+                console.warn('Failed to load from cloud, using local storage:', error);
+                // Fallback to localStorage
+                const savedData = localStorage.getItem('studyTimetableProgressJune');
+                if (savedData) {
+                    const progressData = JSON.parse(savedData);
+                    
+                    // Restore checkbox states from local storage
+                    Object.keys(progressData).forEach(day => {
+                        const status = progressData[day];
+                        const checkBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="check"]`);
+                        const crossBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="cross"]`);
+                        
+                        if (checkBox && crossBox) {
+                            if (status === 'completed') {
+                                checkBox.classList.add('checked');
+                                crossBox.classList.remove('crossed');
+                            } else if (status === 'missed') {
+                                crossBox.classList.add('crossed');
+                                checkBox.classList.remove('checked');
+                            }
+                        }
+                    });
+                }
+                document.getElementById('statusIndicator').textContent = '🔴 Offline - Local storage only';
+            }
+            
+            updateStats();
+        }
+
+        // Save data to cloud and localStorage
+        async function saveData() {
+            const progressData = {};
+            
+            // Get all checked and crossed boxes
+            document.querySelectorAll('.custom-checkbox.checked').forEach(box => {
+                progressData[box.dataset.day] = 'completed';
+            });
+            
+            document.querySelectorAll('.custom-checkbox.crossed').forEach(box => {
+                progressData[box.dataset.day] = 'missed';
+            });
+            
+            // Always save to localStorage first
+            localStorage.setItem('studyTimetableProgressJune', JSON.stringify(progressData));
+            
+            // Try to save to cloud if available
+            if (database && isOnline) {
+                try {
+                    await database.ref(`users/${userId}/progress`).set(progressData);
+                    await database.ref(`users/${userId}/lastUpdated`).set(firebase.database.ServerValue.TIMESTAMP);
+                    document.getElementById('statusIndicator').textContent = '🟢 Online - Syncing across devices';
+                } catch (error) {
+                    console.warn('Failed to save to cloud:', error);
+                    document.getElementById('statusIndicator').textContent = '🟡 Sync issues - Using local storage';
+                }
+            }
+        }
+
+        // Sync local data to cloud
+        async function syncLocalToCloud() {
+            if (!database || !isOnline) return;
+            
+            const localData = localStorage.getItem('studyTimetableProgressJune');
+            if (localData) {
+                try {
+                    const progressData = JSON.parse(localData);
+                    await database.ref(`users/${userId}/progress`).set(progressData);
+                    await database.ref(`users/${userId}/lastUpdated`).set(firebase.database.ServerValue.TIMESTAMP);
+                    console.log('Local data synced to cloud');
+                    document.getElementById('statusIndicator').textContent = '🟢 Online - Syncing across devices';
+                } catch (error) {
+                    console.warn('Failed to sync local data to cloud:', error);
+                }
+            }
+        }
+
         // Handle checkbox clicks
         function handleCheckboxClick(event) {
             const clickedBox = event.currentTarget;
@@ -488,6 +658,7 @@
             }
             
             updateStats();
+            saveData(); // Save progress after each click
         }
 
         // Update statistics
@@ -509,9 +680,81 @@
             document.getElementById('progressText').textContent = progressPercentage + '% Complete';
         }
 
+        // Clear all saved data
+        async function clearAllData() {
+            if (confirm('Are you sure you want to clear all your progress? This will remove data from all your devices and cannot be undone!')) {
+                // Clear local storage
+                localStorage.removeItem('studyTimetableProgressJune');
+                
+                // Clear cloud data if available
+                if (database && isOnline) {
+                    try {
+                        await database.ref(`users/${userId}/progress`).remove();
+                        await database.ref(`users/${userId}/lastUpdated`).set(firebase.database.ServerValue.TIMESTAMP);
+                    } catch (error) {
+                        console.warn('Failed to clear cloud data:', error);
+                    }
+                }
+                
+                // Reset all checkboxes
+                document.querySelectorAll('.custom-checkbox').forEach(box => {
+                    box.classList.remove('checked', 'crossed');
+                });
+                
+                updateStats();
+                alert('All progress data has been cleared from all devices!');
+            }
+        }
+
         // Initialize the timetable
         generateTimetable();
-        updateStats();
+        
+        // Set up real-time listener for cloud updates
+        if (database) {
+            database.ref(`users/${userId}/progress`).on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const cloudData = snapshot.val();
+                    // Only update if this change came from another device
+                    const localData = localStorage.getItem('studyTimetableProgressJune');
+                    if (JSON.stringify(cloudData) !== localData) {
+                        console.log('Received update from another device');
+                        // Update checkboxes to match cloud data
+                        document.querySelectorAll('.custom-checkbox').forEach(box => {
+                            box.classList.remove('checked', 'crossed');
+                        });
+                        
+                        Object.keys(cloudData).forEach(day => {
+                            const status = cloudData[day];
+                            const checkBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="check"]`);
+                            const crossBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="cross"]`);
+                            
+                            if (checkBox && crossBox) {
+                                if (status === 'completed') {
+                                    checkBox.classList.add('checked');
+                                    crossBox.classList.remove('crossed');
+                                } else if (status === 'missed') {
+                                    crossBox.classList.add('crossed');
+                                    checkBox.classList.remove('checked');
+                                }
+                            }
+                        });
+                        
+                        localStorage.setItem('studyTimetableProgressJune', JSON.stringify(cloudData));
+                        updateStats();
+                    }
+                }
+            });
+        }
+        
+        loadSavedData(); // Load saved progress
+        
+        // Show user ID for reference
+        setTimeout(() => {
+            if (userId) {
+                console.log('Your Study Tracker ID:', userId);
+                console.log('Save this ID to access your data from other devices');
+            }
+        }, 2000);
     </script>
 </body>
-</html> 
+</html>
