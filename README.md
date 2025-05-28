@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>45-Day Study Timetable</title>
+    <title>45-Day Study Timetable - Cloud Sync</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -14,7 +14,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -36,52 +36,93 @@
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             font-size: 1.1rem;
         }
-
-        .sync-panel {
-            background: linear-gradient(45deg, #00b894, #00cec9);
+        
+        .setup-section {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
             color: white;
             padding: 20px;
             border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
+            margin-bottom: 25px;
         }
-
-        .sync-panel input {
+        
+        .setup-section h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .setup-steps {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .setup-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .setup-steps li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        
+        .setup-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .setup-input input {
+            flex: 1;
+            min-width: 250px;
             padding: 10px;
             border: none;
             border-radius: 5px;
-            margin: 5px;
             font-size: 14px;
-            width: 200px;
         }
-
-        .sync-panel button {
-            background: white;
-            color: #00b894;
-            border: none;
+        
+        .setup-input button {
             padding: 10px 20px;
+            background: #00b894;
+            color: white;
+            border: none;
             border-radius: 5px;
-            margin: 5px;
             cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.2s;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-
-        .sync-panel button:hover {
-            transform: scale(1.05);
+        
+        .setup-input button:hover {
+            background: #00a085;
+            transform: translateY(-2px);
         }
-
-        .user-id-display {
-            background: rgba(255,255,255,0.2);
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
             padding: 10px;
             border-radius: 5px;
-            margin-top: 10px;
-            font-family: monospace;
-            font-size: 12px;
-            word-break: break-all;
+            font-weight: 600;
+        }
+        
+        .status-connected {
+            background: rgba(0, 184, 148, 0.2);
+            color: #00b894;
+        }
+        
+        .status-disconnected {
+            background: rgba(225, 112, 85, 0.2);
+            color: #e17055;
         }
         
         .legend {
@@ -177,27 +218,56 @@
         }
         
         .checkbox-cell {
-            min-width: 100px;
+            min-width: 150px;
+            padding: 8px;
         }
         
-        .checkbox-container {
+        .subject-checkbox-container {
             display: flex;
-            justify-content: center;
-            gap: 15px;
+            flex-direction: column;
+            gap: 8px;
             align-items: center;
         }
         
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .subject-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            min-width: 45px;
+            text-align: right;
+        }
+        
+        .physics-label {
+            color: #c0392b;
+        }
+        
+        .math-label {
+            color: #2d3436;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 5px;
+        }
+        
         .custom-checkbox {
-            width: 25px;
-            height: 25px;
+            width: 22px;
+            height: 22px;
             border: 2px solid #ddd;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
             position: relative;
+            font-size: 0.75rem;
         }
         
         .custom-checkbox.checked {
@@ -214,7 +284,11 @@
         
         .custom-checkbox:hover {
             transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .progress-container {
+            margin: 20px 0;
         }
         
         .progress-bar {
@@ -222,17 +296,28 @@
             height: 20px;
             background: #ecf0f1;
             border-radius: 10px;
-            margin: 20px 0;
+            margin: 10px 0;
             overflow: hidden;
             position: relative;
         }
         
         .progress-fill {
             height: 100%;
-            background: linear-gradient(45deg, #00b894, #00cec9);
             width: 0%;
             transition: width 0.5s ease;
             border-radius: 10px;
+        }
+        
+        .physics-progress {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+        
+        .math-progress {
+            background: linear-gradient(45deg, #4834d4, #686de0);
+        }
+        
+        .overall-progress {
+            background: linear-gradient(45deg, #00b894, #00cec9);
         }
         
         .progress-text {
@@ -240,94 +325,94 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #2c3e50;
+            color: white;
             font-weight: 600;
             font-size: 0.85rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .progress-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
+            margin: 20px 0;
         }
         
         .stat-card {
             background: linear-gradient(45deg, #74b9ff, #0984e3);
             color: white;
-            padding: 15px 25px;
+            padding: 15px 20px;
             border-radius: 10px;
             text-align: center;
-            min-width: 150px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
+        .physics-stat {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+        
+        .math-stat {
+            background: linear-gradient(45deg, #4834d4, #686de0);
+        }
+        
+        .sync-stat {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            cursor: pointer;
+        }
+        
+        .reset-stat {
+            background: linear-gradient(45deg, #e17055, #d63031);
+            cursor: pointer;
+        }
+        
         .stat-number {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
             display: block;
         }
         
         .stat-label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             opacity: 0.9;
+            margin-top: 5px;
         }
-
-        .status-indicator {
-            text-align: center;
-            margin: 10px 0;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .export-import {
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        .export-import button {
-            background: #74b9ff;
-            color: white;
-            border: none;
+        
+        .sync-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
             padding: 10px 15px;
-            border-radius: 5px;
-            margin: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
         }
-
-        .export-import button:hover {
-            background: #0984e3;
+        
+        .sync-indicator.show {
+            opacity: 1;
         }
-
-        .hidden {
-            display: none;
+        
+        .sync-success {
+            background: linear-gradient(45deg, #00b894, #00cec9);
         }
-
-        .setup-instructions {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+        
+        .sync-error {
+            background: linear-gradient(45deg, #e17055, #d63031);
         }
-
-        .setup-instructions h3 {
-            margin-top: 0;
-            color: #856404;
-        }
-
-        .setup-instructions a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .setup-instructions a:hover {
-            text-decoration: underline;
+        
+        .sync-loading {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
         }
         
         @media (max-width: 768px) {
@@ -336,17 +421,41 @@
                 margin: 10px;
             }
             
+            .setup-input {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .setup-input input {
+                min-width: auto;
+            }
+            
             table {
-                font-size: 0.8rem;
+                font-size: 0.75rem;
             }
             
             th, td {
-                padding: 8px 4px;
+                padding: 6px 4px;
             }
             
             .physics-cell, .math-cell {
-                min-width: 150px;
+                min-width: 140px;
                 padding-left: 8px;
+            }
+            
+            .checkbox-cell {
+                min-width: 120px;
+            }
+            
+            .custom-checkbox {
+                width: 18px;
+                height: 18px;
+                font-size: 0.7rem;
+            }
+            
+            .subject-label {
+                font-size: 0.7rem;
+                min-width: 35px;
             }
             
             h1 {
@@ -357,55 +466,47 @@
                 flex-direction: column;
                 align-items: center;
             }
-
-            .sync-panel input {
-                width: 150px;
+            
+            .stats {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+            
+            .sync-indicator {
+                top: 10px;
+                right: 10px;
+                font-size: 0.8rem;
+                padding: 8px 12px;
             }
         }
     </style>
 </head>
 <body>
+    <div class="sync-indicator" id="syncIndicator"></div>
+    
     <div class="container">
         <h1>📚 45-Day Study Timetable</h1>
-        <p class="subtitle">Physics (2.5 hrs/day) • Mathematics (3.5 hrs/day) • MAY 28 - July 11, 2025</p>
+        <p class="subtitle">Physics (2.5 hrs/day) • Mathematics (3.5 hrs/day) • May 28 - July 11, 2025</p>
         
-        <div class="setup-instructions">
-            <h3>🔧 One-Time Setup for Cloud Sync</h3>
-            <p>To enable permanent cloud storage across all your devices:</p>
-            <ol>
-                <li>Visit <a href="https://jsonbin.io" target="_blank">JSONBin.io</a> and create a free account</li>
-                <li>Go to "API Keys" in your dashboard and copy your Access Key</li>
-                <li>Paste it in the input below and click "Enable Cloud Sync"</li>
-            </ol>
-            <div style="margin-top: 10px;">
-                <input type="text" id="apiKeyInput" placeholder="Paste your JSONBin API Key here" style="width: 300px; padding: 8px; margin-right: 10px;">
-                <button onclick="saveApiKey()" style="background: #00b894; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Enable Cloud Sync</button>
+        <div class="setup-section">
+            <h3>☁️ Google Sheets Integration</h3>
+            <div class="setup-steps">
+                <p><strong>Setup Instructions:</strong></p>
+                <ol>
+                    <li>Create a new Google Sheet with columns: Day, Date, Physics, Math</li>
+                    <li>Go to Extensions → Apps Script in your Google Sheet</li>
+                    <li>Replace the default code with the provided script (see instructions below)</li>
+                    <li>Deploy as Web App and copy the URL</li>
+                    <li>Paste the URL below and click Connect</li>
+                </ol>
             </div>
-            <p><small>Your API key is stored locally and used only for your personal data storage.</small></p>
-        </div>
-        
-        <div class="sync-panel">
-            <h3 style="margin-top: 0;">🔄 Cross-Device Sync</h3>
-            <div>
-                <input type="text" id="userIdInput" placeholder="Enter your Study ID to sync" />
-                <button onclick="syncWithId()">Sync Data</button>
-                <button onclick="generateNewId()">Generate New ID</button>
+            <div class="setup-input">
+                <input type="text" id="sheetUrl" placeholder="Paste your Google Apps Script Web App URL here..." value="">
+                <button onclick="connectToSheet()">Connect</button>
+                <button onclick="testConnection()" style="background: #fdcb6e;">Test</button>
             </div>
-            <div class="user-id-display">
-                Your Study ID: <span id="currentUserId">Generating...</span>
-                <br><small>Save this ID to access your data from any device!</small>
+            <div class="connection-status status-disconnected" id="connectionStatus">
+                ❌ Not Connected - Enter your Google Sheet URL above
             </div>
-        </div>
-
-        <div class="export-import">
-            <button onclick="exportData()">📥 Export Data</button>
-            <button onclick="document.getElementById('importFile').click()">📤 Import Data</button>
-            <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="hidden">
-            <button onclick="clearAllData()" style="background: #e17055;">🗑️ Clear All Data</button>
-        </div>
-
-        <div class="status-indicator" id="statusIndicator">
-            🟡 Initializing...
         </div>
         
         <div class="legend">
@@ -418,27 +519,56 @@
         </div>
         
         <div class="stats">
-            <div class="stat-card">
-                <span class="stat-number" id="completedDays">0</span>
-                <span class="stat-label">Days Completed</span>
+            <div class="stat-card physics-stat">
+                <span class="stat-number" id="physicsCompleted">0</span>
+                <span class="stat-label">🔬 Physics Completed</span>
+            </div>
+            <div class="stat-card math-stat">
+                <span class="stat-number" id="mathCompleted">0</span>
+                <span class="stat-label">📐 Math Completed</span>
             </div>
             <div class="stat-card">
                 <span class="stat-number" id="totalHours">0</span>
-                <span class="stat-label">Hours Studied</span>
+                <span class="stat-label">Total Hours Studied</span>
             </div>
             <div class="stat-card">
-                <span class="stat-number" id="successRate">0%</span>
-                <span class="stat-label">Success Rate</span>
+                <span class="stat-number" id="overallProgress">0%</span>
+                <span class="stat-label">Overall Progress</span>
             </div>
-            <div class="stat-card" style="background: linear-gradient(45deg, #00b894, #00cec9);">
-                <span class="stat-number" id="streak">0</span>
-                <span class="stat-label">Current Streak</span>
+            <div class="stat-card sync-stat" onclick="syncWithSheet()" title="Sync with Google Sheets">
+                <span class="stat-number">☁️</span>
+                <span class="stat-label">Sync Now</span>
+            </div>
+            <div class="stat-card reset-stat" onclick="clearAllData()" title="Clear all progress data">
+                <span class="stat-number">🗑️</span>
+                <span class="stat-label">Reset Data</span>
             </div>
         </div>
         
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-            <div class="progress-text" id="progressText">0% Complete</div>
+        <div class="progress-container">
+            <div class="progress-label">
+                <span>🔬 Physics Progress</span>
+                <span id="physicsProgressText">0/45</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill physics-progress" id="physicsProgressFill"></div>
+            </div>
+            
+            <div class="progress-label">
+                <span>📐 Mathematics Progress</span>
+                <span id="mathProgressText">0/45</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill math-progress" id="mathProgressFill"></div>
+            </div>
+            
+            <div class="progress-label">
+                <span>📊 Overall Progress</span>
+                <span id="overallProgressText">0/90</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill overall-progress" id="overallProgressFill"></div>
+            </div>
         </div>
         
         <table>
@@ -448,25 +578,74 @@
                     <th>Date</th>
                     <th>🔬 Physics Topics (2.5 hrs)</th>
                     <th>📐 Mathematics Topics (3.5 hrs)</th>
-                    <th>Progress</th>
+                    <th>Progress Tracking</th>
                 </tr>
             </thead>
             <tbody id="timetableBody">
                 <!-- Table content will be generated by JavaScript -->
             </tbody>
         </table>
+        
+        <div class="setup-section" style="margin-top: 30px;">
+            <h3>📋 Google Apps Script Code</h3>
+            <div class="setup-steps">
+                <p><strong>Copy this code to your Google Apps Script:</strong></p>
+                <pre style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; line-height: 1.4;">
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSheet();
+  const data = JSON.parse(e.postData.contents);
+  
+  // Clear existing data (except headers)
+  if (sheet.getLastRow() > 1) {
+    sheet.deleteRows(2, sheet.getLastRow() - 1);
+  }
+  
+  // Set headers if not present
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, 4).setValues([['Day', 'Date', 'Physics', 'Math']]);
+  }
+  
+  // Add data
+  const rows = [];
+  Object.keys(data).forEach(key => {
+    const [day, date] = key.split('|');
+    const progress = data[key];
+    rows.push([day, date, progress.physics || '', progress.math || '']);
+  });
+  
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, 4).setValues(rows);
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({success: true}));
+}
+
+function doGet() {
+  const sheet = SpreadsheetApp.getActiveSheet();
+  const data = sheet.getDataRange().getValues();
+  
+  if (data.length <= 1) return ContentService.createTextOutput(JSON.stringify({}));
+  
+  const result = {};
+  for (let i = 1; i < data.length; i++) {
+    const [day, date, physics, math] = data[i];
+    if (day && date) {
+      const key = `${day}|${date}`;
+      result[key] = {
+        physics: physics || '',
+        math: math || ''
+      };
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(result));
+}
+                </pre>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Cloud storage configuration
-        const JSONBIN_API_URL = 'https://api.jsonbin.io/v3/b';
-        let JSONBIN_ACCESS_KEY = null;
-        
-        let currentUserId = null;
-        let currentBinId = null;
-        let isOnline = navigator.onLine;
-        let autoSaveTimeout = null;
-
         // Study plan data
         const physicsTopics = [
             "Ch 1: Electric Charges and Fields - Basic concepts",
@@ -565,56 +744,8 @@
             "Vectors - Dot product & cross product applications"
         ];
 
-        // Network status monitoring
-        window.addEventListener('online', () => {
-            isOnline = true;
-            updateStatus('🟢 Online - Auto-sync enabled');
-            autoSyncToCloud();
-        });
-
-        window.addEventListener('offline', () => {
-            isOnline = false;
-            updateStatus('🔴 Offline - Local storage only');
-        });
-
-        // Initialize the application
-        function initApp() {
-            loadApiKey();
-            initializeUserId();
-            generateTimetable();
-            loadData();
-            updateStats();
-        }
-
-        // Save API key
-        function saveApiKey() {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
-            if (!apiKey) {
-                alert('Please enter your JSONBin API key');
-                return;
-            }
-            
-            JSONBIN_ACCESS_KEY = apiKey;
-            localStorage.setItem('jsonbinApiKey', apiKey);
-            document.getElementById('apiKeyInput').value = '';
-            
-            // Hide setup instructions
-            document.querySelector('.setup-instructions').style.display = 'none';
-            
-            updateStatus('🔑 API Key saved - Cloud sync enabled');
-            
-            // Try to sync existing data
-            autoSyncToCloud();
-        }
-
-        // Load API key from storage
-        function loadApiKey() {
-            JSONBIN_ACCESS_KEY = localStorage.getItem('jsonbinApiKey');
-            if (JSONBIN_ACCESS_KEY) {
-                document.querySelector('.setup-instructions').style.display = 'none';
-                updateStatus('🔑 Cloud sync ready');
-            }
-        }
+        let googleSheetUrl = '';
+        let isConnected = false;
 
         // Generate dates starting from May 28, 2025
         function generateDates(startDate, days) {
@@ -639,71 +770,6 @@
             return date.toLocaleDateString('en-US', options);
         }
 
-        // Generate unique user ID
-        function generateUserId() {
-            return 'study_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        // Initialize user ID
-        function initializeUserId() {
-            currentUserId = localStorage.getItem('studyTrackerUserId');
-            if (!currentUserId) {
-                currentUserId = generateUserId();
-                localStorage.setItem('studyTrackerUserId', currentUserId);
-            }
-            document.getElementById('currentUserId').textContent = currentUserId;
-            
-            // Load bin ID if exists
-            currentBinId = localStorage.getItem('studyTrackerBinId_' + currentUserId);
-        }
-
-        // Generate new user ID
-        function generateNewId() {
-            if (confirm('This will create a new Study ID and you will lose access to your current data unless you export it first. Continue?')) {
-                currentUserId = generateUserId();
-                localStorage.setItem('studyTrackerUserId', currentUserId);
-                localStorage.removeItem('studyTrackerBinId_' + currentUserId);
-                currentBinId = null;
-                document.getElementById('currentUserId').textContent = currentUserId;
-                
-                // Clear current progress
-                document.querySelectorAll('.custom-checkbox').forEach(box => {
-                    box.classList.remove('checked', 'crossed');
-                });
-                
-                updateStats();
-                saveData();
-                updateStatus('🆕 New Study ID generated');
-            }
-        }
-
-        // Sync with existing ID
-        function syncWithId() {
-            const inputId = document.getElementById('userIdInput').value.trim();
-            if (!inputId) {
-                alert('Please enter a Study ID');
-                return;
-            }
-            
-            if (confirm('This will sync with the provided Study ID and may overwrite your current progress. Continue?')) {
-                currentUserId = inputId;
-                localStorage.setItem('studyTrackerUserId', currentUserId);
-                document.getElementById('currentUserId').textContent = currentUserId;
-                document.getElementById('userIdInput').value = '';
-                
-                // Reset bin ID for new user
-                currentBinId = localStorage.getItem('studyTrackerBinId_' + currentUserId);
-                
-                // Try to load data for this ID
-                loadCloudData();
-            }
-        }
-
-        // Update status indicator
-        function updateStatus(message) {
-            document.getElementById('statusIndicator').textContent = message;
-        }
-
         // Generate timetable
         function generateTimetable() {
             const startDate = new Date('2025-05-28');
@@ -719,12 +785,20 @@
                     <td class="physics-cell">${physicsTopics[i]}</td>
                     <td class="math-cell">${mathTopics[i]}</td>
                     <td class="checkbox-cell">
-                        <div class="checkbox-container">
-                            <div class="custom-checkbox" data-day="${i + 1}" data-type="check" title="Completed successfully">
-                                ✓
+                        <div class="subject-checkbox-container">
+                            <div class="checkbox-row">
+                                <span class="subject-label physics-label">PHY:</span>
+                                <div class="checkbox-group">
+                                    <div class="custom-checkbox" data-day="${i + 1}" data-date="${formatDate(dates[i])}" data-subject="physics" data-type="check" title="Physics completed successfully">✓</div>
+                                    <div class="custom-checkbox" data-day="${i + 1}" data-date="${formatDate(dates[i])}" data-subject="physics" data-type="cross" title="Physics not completed">✗</div>
+                                </div>
                             </div>
-                            <div class="custom-checkbox" data-day="${i + 1}" data-type="cross" title="Did not follow routine">
-                                ✗
+                            <div class="checkbox-row">
+                                <span class="subject-label math-label">MATH:</span>
+                                <div class="checkbox-group">
+                                    <div class="custom-checkbox" data-day="${i + 1}" data-date="${formatDate(dates[i])}" data-subject="math" data-type="check" title="Math completed successfully">✓</div>
+                                    <div class="custom-checkbox" data-day="${i + 1}" data-date="${formatDate(dates[i])}" data-subject="math" data-type="cross" title="Math not completed">✗</div>
+                                </div>
                             </div>
                         </div>
                     </td>
@@ -739,109 +813,42 @@
             });
         }
 
-        // Get current progress data
-        function getProgressData() {
-            const progressData = {
-                userId: currentUserId,
-                timestamp: Date.now(),
-                progress: {}
-            };
-            
-            // Get all checked and crossed boxes
-            document.querySelectorAll('.custom-checkbox.checked').forEach(box => {
-                progressData.progress[box.dataset.day] = 'completed';
-            });
-            
-            document.querySelectorAll('.custom-checkbox.crossed').forEach(box => {
-                progressData.progress[box.dataset.day] = 'missed';
-            });
-            
-            return progressData;
-        }
-
-        // Apply progress data to checkboxes
-        function applyProgressData(data) {
-            // Clear all checkboxes first
-            document.querySelectorAll('.custom-checkbox').forEach(box => {
-                box.classList.remove('checked', 'crossed');
-            });
-            
-            // Apply progress
-            if (data.progress) {
-                Object.keys(data.progress).forEach(day => {
-                    const status = data.progress[day];
-                    const checkBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="check"]`);
-                    const crossBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="cross"]`);
-                    
-                    if (checkBox && crossBox) {
-                        if (status === 'completed') {
-                            checkBox.classList.add('checked');
-                            crossBox.classList.remove('crossed');
-                        } else if (status === 'missed') {
-                            crossBox.classList.add('crossed');
-                            checkBox.classList.remove('checked');
-                        }
-                    }
-                });
-            }
-        }
-
-        // Save data to cloud using JSONBin
-        async function saveToCloud(data) {
-            if (!isOnline || !JSONBIN_ACCESS_KEY) return false;
-            
-            try {
-                let url = JSONBIN_API_URL;
-                let method = 'POST';
-                
-                // If we have a bin ID, update existing bin
-                if (currentBinId) {
-                    url = `${JSONBIN_API_URL}/${currentBinId}`;
-                    method = 'PUT';
-                }
-                
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_ACCESS_KEY,
-                        'X-Bin-Name': `StudyTracker_${currentUserId}`,
-                        'X-Bin-Private': 'true'
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    
-                    // Save bin ID for future updates
-                    if (result.metadata && result.metadata.id) {
-                        currentBinId = result.metadata.id;
-                        localStorage.setItem('studyTrackerBinId_' + currentUserId, currentBinId);
-                    }
-                    
-                    updateStatus('🟢 Data saved to cloud permanently');
-                    return true;
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                console.warn('Cloud save failed:', error);
-                updateStatus('🟡 Cloud save failed - using local storage only');
-                return false;
-            }
-        }
-
-        // Load data from cloud
-        async function loadCloudData() {
-            if (!JSONBIN_ACCESS_KEY) {
-                loadLocalData();
+        // Connect to Google Sheet
+        function connectToSheet() {
+            const url = document.getElementById('sheetUrl').value.trim();
+            if (!url) {
+                alert('Please enter your Google Apps Script URL');
                 return;
             }
             
-            updateStatus('🔄 Loading data from cloud...');
+            googleSheetUrl = url;
+            localStorage.setItem('googleSheetUrl', url);
+            
+            testConnection();
+        }
+
+        // Test connection to Google Sheet
+        async function testConnection() {
+            if (!googleSheetUrl) {
+                showSyncIndicator('Please connect to Google Sheets first', 'error');
+                return;
+            }
+            
+            showSyncIndicator('Testing connection...', 'loading');
             
             try {
-                // Try to load with bin ID first
-                if (currentBinId) {
-                    const response = await fetch(`${JSONBIN_API_URL}/${
+                const response = await fetch(googleSheetUrl);
+                const data = await response.json();
+                
+                isConnected = true;
+                updateConnectionStatus(true);
+                showSyncIndicator('Connected successfully!', 'success');
+                
+                // Load data from sheet
+                loadFromSheet(data);
+                
+            } catch (error) {
+                isConnected = false;
+                updateConnectionStatus(false);
+                showSyncIndicator('Connection failed. Check your URL.', 'error');
+                console.error('Connection error:',
