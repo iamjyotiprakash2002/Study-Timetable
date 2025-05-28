@@ -307,6 +307,28 @@
         .hidden {
             display: none;
         }
+
+        .setup-instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .setup-instructions h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+
+        .setup-instructions a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .setup-instructions a:hover {
+            text-decoration: underline;
+        }
         
         @media (max-width: 768px) {
             .container {
@@ -346,6 +368,21 @@
     <div class="container">
         <h1>📚 45-Day Study Timetable</h1>
         <p class="subtitle">Physics (2.5 hrs/day) • Mathematics (3.5 hrs/day) • MAY 28 - July 11, 2025</p>
+        
+        <div class="setup-instructions">
+            <h3>🔧 One-Time Setup for Cloud Sync</h3>
+            <p>To enable permanent cloud storage across all your devices:</p>
+            <ol>
+                <li>Visit <a href="https://jsonbin.io" target="_blank">JSONBin.io</a> and create a free account</li>
+                <li>Go to "API Keys" in your dashboard and copy your Access Key</li>
+                <li>Paste it in the input below and click "Enable Cloud Sync"</li>
+            </ol>
+            <div style="margin-top: 10px;">
+                <input type="text" id="apiKeyInput" placeholder="Paste your JSONBin API Key here" style="width: 300px; padding: 8px; margin-right: 10px;">
+                <button onclick="saveApiKey()" style="background: #00b894; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Enable Cloud Sync</button>
+            </div>
+            <p><small>Your API key is stored locally and used only for your personal data storage.</small></p>
+        </div>
         
         <div class="sync-panel">
             <h3 style="margin-top: 0;">🔄 Cross-Device Sync</h3>
@@ -421,9 +458,9 @@
     </div>
 
     <script>
-        // Cloud storage service (using JSONBin.io as a reliable alternative)
+        // Cloud storage configuration
         const JSONBIN_API_URL = 'https://api.jsonbin.io/v3/b';
-        const JSONBIN_ACCESS_KEY = '$2a$10$YOUR_API_KEY_HERE'; // Users will need to get their own free API key
+        let JSONBIN_ACCESS_KEY = null;
         
         let currentUserId = null;
         let currentBinId = null;
@@ -540,6 +577,45 @@
             updateStatus('🔴 Offline - Local storage only');
         });
 
+        // Initialize the application
+        function initApp() {
+            loadApiKey();
+            initializeUserId();
+            generateTimetable();
+            loadData();
+            updateStats();
+        }
+
+        // Save API key
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                alert('Please enter your JSONBin API key');
+                return;
+            }
+            
+            JSONBIN_ACCESS_KEY = apiKey;
+            localStorage.setItem('jsonbinApiKey', apiKey);
+            document.getElementById('apiKeyInput').value = '';
+            
+            // Hide setup instructions
+            document.querySelector('.setup-instructions').style.display = 'none';
+            
+            updateStatus('🔑 API Key saved - Cloud sync enabled');
+            
+            // Try to sync existing data
+            autoSyncToCloud();
+        }
+
+        // Load API key from storage
+        function loadApiKey() {
+            JSONBIN_ACCESS_KEY = localStorage.getItem('jsonbinApiKey');
+            if (JSONBIN_ACCESS_KEY) {
+                document.querySelector('.setup-instructions').style.display = 'none';
+                updateStatus('🔑 Cloud sync ready');
+            }
+        }
+
         // Generate dates starting from May 28, 2025
         function generateDates(startDate, days) {
             const dates = [];
@@ -614,6 +690,9 @@
                 localStorage.setItem('studyTrackerUserId', currentUserId);
                 document.getElementById('currentUserId').textContent = currentUserId;
                 document.getElementById('userIdInput').value = '';
+                
+                // Reset bin ID for new user
+                currentBinId = localStorage.getItem('studyTrackerBinId_' + currentUserId);
                 
                 // Try to load data for this ID
                 loadCloudData();
@@ -707,145 +786,62 @@
             }
         }
 
-        // Save data to cloud using a simple cloud storage API
+        // Save data to cloud using JSONBin
         async function saveToCloud(data) {
-            if (!isOnline) return false;
+            if (!isOnline || !JSONBIN_ACCESS_KEY) return false;
             
             try {
-                // Simple cloud storage using httpbin.org for demonstration
-                // In real implementation, use a proper service like Firebase, Supabase, or your own backend
-                const response = await fetch('https://httpbin.org/post', {
-                    method: 'POST',
+                let url = JSONBIN_API_URL;
+                let method = 'POST';
+                
+                // If we have a bin ID, update existing bin
+                if (currentBinId) {
+                    url = `${JSONBIN_API_URL}/${currentBinId}`;
+                    method = 'PUT';
+                }
+                
+                const response = await fetch(url, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_ACCESS_KEY,
+                        'X-Bin-Name': `StudyTracker_${currentUserId}`,
+                        'X-Bin-Private': 'true'
                     },
-                    body: JSON.stringify({
-                        studyTracker: data,
-                        userId: currentUserId
-                    })
+                    body: JSON.stringify(data)
                 });
                 
                 if (response.ok) {
-                    updateStatus('🟢 Data saved to cloud');
+                    const result = await response.json();
+                    
+                    // Save bin ID for future updates
+                    if (result.metadata && result.metadata.id) {
+                        currentBinId = result.metadata.id;
+                        localStorage.setItem('studyTrackerBinId_' + currentUserId, currentBinId);
+                    }
+                    
+                    updateStatus('🟢 Data saved to cloud permanently');
                     return true;
                 } else {
-                    throw new Error('Failed to save to cloud');
+                    throw new Error(`HTTP ${response.status}`);
                 }
             } catch (error) {
                 console.warn('Cloud save failed:', error);
-                updateStatus('🟡 Cloud save failed - using local storage');
+                updateStatus('🟡 Cloud save failed - using local storage only');
                 return false;
             }
         }
 
         // Load data from cloud
         async function loadCloudData() {
+            if (!JSONBIN_ACCESS_KEY) {
+                loadLocalData();
+                return;
+            }
+            
             updateStatus('🔄 Loading data from cloud...');
             
-            // Since we're using a demo service, we'll simulate cloud loading
-            // In a real implementation, you would fetch from your cloud service here
-            
-            setTimeout(() => {
-                updateStatus('🟡 Demo mode - using local storage only');
-                loadLocalData();
-            }, 1000);
-        }
-
-        // Save data locally and attempt cloud sync
-        function saveData() {
-            const progressData = getProgressData();
-            
-            // Always save locally first
-            localStorage.setItem('studyTrackerProgress_' + currentUserId, JSON.stringify(progressData));
-            
-            // Debounced cloud sync
-            if (autoSaveTimeout) {
-                clearTimeout(autoSaveTimeout);
-            }
-            
-            autoSaveTimeout = setTimeout(() => {
-                autoSyncToCloud();
-            }, 2000); // Wait 2 seconds before syncing to cloud to avoid too many requests
-        }
-
-        // Auto sync to cloud when online
-        async function autoSyncToCloud() {
-            if (!isOnline) return;
-            
-            const progressData = getProgressData();
-            await saveToCloud(progressData);
-        }
-
-        // Load local data
-        function loadLocalData() {
-            const savedData = localStorage.getItem('studyTrackerProgress_' + currentUserId);
-            if (savedData) {
-                try {
-                    const progressData = JSON.parse(savedData);
-                    applyProgressData(progressData);
-                    updateStatus('📱 Loaded from local storage');
-                } catch (error) {
-                    console.error('Error loading local data:', error);
-                    updateStatus('❌ Error loading saved data');
-                }
-            } else {
-                updateStatus('🆕 Starting fresh - no saved data found');
-            }
-        }
-
-        // Handle checkbox clicks
-        function handleCheckboxClick(event) {
-            const clickedBox = event.currentTarget;
-            const day = clickedBox.dataset.day;
-            const type = clickedBox.dataset.type;
-            
-            // Find the other checkbox in the same row
-            const otherBox = document.querySelector(
-                `.custom-checkbox[data-day="${day}"][data-type="${type === 'check' ? 'cross' : 'check'}"]`
-            );
-            
-            // Toggle clicked checkbox
-            if (clickedBox.classList.contains(type === 'check' ? 'checked' : 'crossed')) {
-                clickedBox.classList.remove(type === 'check' ? 'checked' : 'crossed');
-            } else {
-                clickedBox.classList.add(type === 'check' ? 'checked' : 'crossed');
-                // Remove the other checkbox state
-                otherBox.classList.remove(type === 'check' ? 'crossed' : 'checked');
-            }
-            
-            updateStats();
-            saveData(); // Save progress after each click
-        }
-
-        // Calculate current streak
-        function calculateStreak() {
-            let streak = 0;
-            let currentDay = 1;
-            
-            // Find the last completed day and calculate backwards
-            for (let day = 45; day >= 1; day--) {
-                const checkBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="check"]`);
-                const crossBox = document.querySelector(`.custom-checkbox[data-day="${day}"][data-type="cross"]`);
-                
-                if (checkBox && checkBox.classList.contains('checked')) {
-                    // Count consecutive successful days from the end
-                    let tempStreak = 0;
-                    for (let i = day; i >= 1; i--) {
-                        const cb = document.querySelector(`.custom-checkbox[data-day="${i}"][data-type="check"]`);
-                        if (cb && cb.classList.contains('checked')) {
-                            tempStreak++;
-                        } else {
-                            break;
-                        }
-                    }
-                    streak = Math.max(streak, tempStreak);
-                    break;
-                }
-            }
-            
-            return streak;
-        }
-
-        // Update statistics
-        function updateStats() {
-            const
+            try {
+                // Try to load with bin ID first
+                if (currentBinId) {
+                    const response = await fetch(`${JSONBIN_API_URL}/${
